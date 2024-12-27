@@ -1,6 +1,6 @@
 # miaomiao
 ## Create your datasets
-Davis and KIBA datasets were downloaded from https://github.com/hkmztrk/DeepDTA/tree/master/data
+Davis and KIBA datasets were downloaded from https://github.com/hkmztrk/DeepDTA/tree/master/data.
 Base learners were downloaded from:
 1.https://github.com/thinng/GraphDTA
 2.https://github.com/lizongquan01/TEFDTA
