@@ -1,9 +1,9 @@
 # miaomiao
 ## Create your conda environment
 You can create a conda environment by referencing the environment.yml file.
-## Create your datasets
+## Split your datasets
 Davis and KIBA datasets were downloaded from https://github.com/hkmztrk/DeepDTA/tree/master/data. Alternatively, you can use the datasets from the davis.zip and kiba.zip compressed files. We refer to https://github.com/vtarasv/3d-prot-dta, if you need to split the dataset using the same method as ours, you can download it. Then transfer our split_datasets.py to the corresponding folder and execute python split_datasets.py.
-
+## Create your datasets
 Base learners were downloaded from:
 1.https://github.com/thinng/GraphDTA
 2.https://github.com/lizongquan01/TEFDTA
@@ -16,6 +16,7 @@ Then, you can run
 ```
 python create_data.py
 ```
+If you don't have time to build datasets, you can directly download datasets we have built. Copy and paste cloud.txt into your Baidu Cloud Drive to use our files.
 ## Training
 You can run
 ```
