@@ -16,7 +16,6 @@ Then, you can run
 ```
 python create_data.py
 ```
-If you don't have time to build datasets, you can directly download datasets we have built. Copy and paste cloud.txt into your Baidu Cloud Drive to use our files.
 ## Training
 You can run
 ```
