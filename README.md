@@ -28,3 +28,5 @@ You can run
 ```
 python training.py
 ```
+You can change the parameters by modifying config.yaml. 
+## If you have any questions, please contact me and I will answer them as soon as possible.
