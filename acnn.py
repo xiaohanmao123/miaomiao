@@ -5,6 +5,20 @@ from torch_geometric.nn import GATv2Conv, global_max_pool as gmp
 from torch_geometric.nn import GATv2Conv
 import numpy as np
 from models.odconv import ODConv2d
+import yaml
+
+with open("./config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
+size1 = config["size1"]
+size2 = config["size2"]
+size3 = config["size3"]
+size4 = config["size4"]
+size5 = config["size5"]
+size6 = config["size6"]
+size7 = config["size7"]
+layers = config["layers"]
+num = config["num"]
 
 def odconv3x3(in_planes, out_planes, stride=1, reduction=0.0625, kernel_num=1):
     return ODConv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1,
@@ -42,17 +56,17 @@ class BasicBlock(nn.Module):
 
 class DoubleAttention(nn.Module):
 
-    def __init__(self, in_channels,c_m=128,c_n=128,reconstruct = True):
+    def __init__(self, in_channels,c_m=size1,c_n=size1,reconstruct = True):
         super().__init__()
         self.in_channels=in_channels
         self.reconstruct = reconstruct
         self.c_m=c_m
         self.c_n=c_n
-        self.convA = nn.Conv1d(in_channels, out_channels=128, kernel_size=1, stride=1, padding=1)
-        self.convB = nn.Conv1d(in_channels, out_channels=128, kernel_size=1, stride=1, padding=1)
-        self.convV = nn.Conv1d(in_channels, out_channels=128, kernel_size=1, stride=1, padding=1)
+        self.convA = nn.Conv1d(in_channels, out_channels=size1, kernel_size=1, stride=1, padding=1)
+        self.convB = nn.Conv1d(in_channels, out_channels=size1, kernel_size=1, stride=1, padding=1)
+        self.convV = nn.Conv1d(in_channels, out_channels=size1, kernel_size=1, stride=1, padding=1)
         if self.reconstruct:
-            self.conv_reconstruct = nn.Conv1d(in_channels=128, out_channels=333, kernel_size = 1)
+            self.conv_reconstruct = nn.Conv1d(in_channels=size1, out_channels=333, kernel_size = 1)
         self.init_weights()
 
 
@@ -143,7 +157,7 @@ class Encoder(nn.Module):
     
     def forward(self, x, mask):
         N, seq_length = x.shape
-        positions = torch.arange(0, seq_length).expand(N, seq_length).to('cuda:1')
+        positions = torch.arange(0, seq_length).expand(N, seq_length).to('cuda:0')
         out = self.dropout(x.unsqueeze(-1) + self.position_embedding(positions))
         for layer in self.layers:
             out = layer(out, out, out, mask)
@@ -158,7 +172,7 @@ class Transformer(nn.Module):
         src_pad_idx=0,
         trg_pad_idx=0,
         embed_size = 256,
-        num_layers = 1,
+        num_layers = layers,
         forward_expansion = 4,
         heads = 8,
         dropout = 0.1,
@@ -270,17 +284,17 @@ class AFF(nn.Module):
         super(AFF, self).__init__()
         inter_channels = int(channels // r)
 
-        self.conv_1 = nn.Conv1d(in_channels=128, out_channels=32, kernel_size=3, padding=1,
+        self.conv_1 = nn.Conv1d(in_channels=size3, out_channels=32, kernel_size=3, padding=1,
                             stride=1, groups=1)
-        self.conv_2 = nn.Conv1d(in_channels=128, out_channels=32, kernel_size=5, padding=2,
+        self.conv_2 = nn.Conv1d(in_channels=size3, out_channels=32, kernel_size=5, padding=2,
                             stride=1, groups=4)
-        self.conv_3 = nn.Conv1d(in_channels=128, out_channels=32, kernel_size=7, padding=3,
+        self.conv_3 = nn.Conv1d(in_channels=size3, out_channels=32, kernel_size=7, padding=3,
                             stride=1, groups=8)
-        self.conv_4 = nn.Conv1d(in_channels=128, out_channels=32, kernel_size=9, padding=4,
+        self.conv_4 = nn.Conv1d(in_channels=size3, out_channels=32, kernel_size=9, padding=4,
                             stride=1, groups=16)
 
-        self.convs1 = nn.Conv1d(in_channels=1, out_channels=128, kernel_size=1, stride=1, padding=0)
-        self.nonlocal_block = NonLocal(128)
+        self.convs1 = nn.Conv1d(in_channels=1, out_channels=size3, kernel_size=1, stride=1, padding=0)
+        self.nonlocal_block = NonLocal(size3)
         self.multihead = SelfAttention(333,3)
         self.sigmoid = nn.Sigmoid()
 
@@ -293,6 +307,7 @@ class AFF(nn.Module):
         x3 = self.conv_3(xa)
         x4 = self.conv_4(xa) 
         xl = torch.cat((x1, x2, x3, x4), dim=1) 
+
         xg = self.nonlocal_block(xa)
         xlg = xl + xg
         wei = self.sigmoid(xlg)
@@ -308,7 +323,7 @@ class cnn(nn.Module):
 
         self.aff = AFF()
 
-        self.basicblock = BasicBlock(1,4)
+        self.basicblock = nn.ModuleList([BasicBlock(1,4) for _ in range(layers)])
         
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
@@ -321,33 +336,31 @@ class cnn(nn.Module):
         self.pool1d = nn.MaxPool1d(kernel_size=2)
         self.ppool2d = nn.MaxPool2d(kernel_size=(2, 2))
 
-        self.ppfc1 = nn.Linear(3744, 2048)
-        self.ppfc2 = nn.Linear(2048, 1024)
-        self.ppfc3 = nn.Linear(1024, 333)
+        self.ppfc1 = nn.Linear(3744, size4*num)
+        self.ppfc2 = nn.Linear(size4*num, size4)
+        self.ppfc3 = nn.Linear(size4, 333)
 
         # protein
         self.pool3d = nn.MaxPool3d(kernel_size=(2, 2, 2))
-        self.pfc1 = nn.Linear(1344, 2048)
-        self.pfc2 = nn.Linear(2048, 1024)
-        self.pfc3 = nn.Linear(1024, output_dim)
+        self.pfc1 = nn.Linear(1344, size5*num)
+        self.pfc2 = nn.Linear(size5*num, size5)
+        self.pfc3 = nn.Linear(size5, output_dim)
 
         self.conv1 = GATv2Conv(num_features_xd, num_features_xd)
         self.conv2 = GATv2Conv(num_features_xd, num_features_xd*2)
         self.conv3 = GATv2Conv(num_features_xd*2, num_features_xd * 4)
-        self.fc_g1 = torch.nn.Linear(num_features_xd*4, 1024)
-        self.fc_g2 = torch.nn.Linear(1024, output_dim)
+        self.fc_g1 = torch.nn.Linear(num_features_xd*4, 128)
+        self.fc_g2 = torch.nn.Linear(128, output_dim)
 
         # dpFNN
-        self.ddfc1 = nn.Linear(42624, 2048)
-        self.ddfc2 = nn.Linear(2048, 1024)
-        self.ddfc3 = nn.Linear(1024, 128)
+        self.ddfc1 = nn.Linear(42624, size6*num)
+        self.ddfc2 = nn.Linear(size6*num, size6)
+        self.ddfc3 = nn.Linear(size6, size6)
 
         # FNN
-        self.fc1 = nn.Linear(1044, 1024)
-        self.fc2 = nn.Linear(1024, 512)
-        self.out = nn.Linear(512, self.n_output)
-
-        
+        self.fc1 = nn.Linear(1044, size7)
+        self.fc2 = nn.Linear(size7, size7//num)
+        self.out = nn.Linear(size7//num, self.n_output)
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
@@ -376,7 +389,6 @@ class cnn(nn.Module):
         xd = self.conv9(xd)
         xd = self.relu(xd)
         xd = self.pool1d(xd)
-        #print('xd', xd.shape) #xd torch.Size([512, 32, 117])
         xd = xd.view(-1, 3744)
         xd = self.ppfc1(xd)
         xd = self.relu(xd)
@@ -396,7 +408,7 @@ class cnn(nn.Module):
 
         x = self.conv3(x, edge_index)
         x = self.relu(x)
-        x = gmp(x, batch)       
+        x = gmp(x, batch)       # global max pooling
         x = self.relu(self.fc_g1(x))
         x = self.dropout(x)
         x = self.fc_g2(x)
@@ -415,11 +427,13 @@ class cnn(nn.Module):
         xq = self.ddfc3(xq)
         xq = self.relu(xq)
         xq = self.dropout(xq)
-
+        #print('x', x.shape, 'xq', xq.shape)
         xc = torch.cat((x, xq, prot, graph, kc, liggen, tef), 1)
+        #print('xc', xc.shape)
         xc = xc.view(-1,3,87)
         xc = xc.unsqueeze(1)
-        xc = self.basicblock(xc)
+        for block in self.basicblock:
+            xc = block(xc)
         xc = xc.view(-1,1044)
         xc = self.fc1(xc)
         xc = self.relu(xc)
