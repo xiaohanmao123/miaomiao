@@ -4,9 +4,11 @@ import sys, os
 from random import shuffle
 import torch
 import torch.nn as nn
-from acnn import *
+from models.acnn import *
 from utils import *
 import matplotlib.pyplot as plt
+import random
+import yaml
 
 def train(model, device, train_loader, optimizer, epoch, lambda_l2):
     print('Training on {} samples...'.format(len(train_loader.dataset)))
@@ -17,6 +19,7 @@ def train(model, device, train_loader, optimizer, epoch, lambda_l2):
         output = model(data)
         loss = loss_fn(output, data.y.view(-1, 1).float().to(device))
         
+        # Calculate L2 regularization
         l2_reg = sum(torch.norm(w, p=2) for w in model.parameters())
         loss += lambda_l2 * l2_reg
         
@@ -44,16 +47,15 @@ def predicting(model, device, loader):
             total_labels = torch.cat((total_labels, data.y.view(-1, 1).cpu()), 0)
     return total_labels.numpy().flatten(), total_preds.numpy().flatten()
 
-def draw_mse(train_mse_values, test_mse_values, figname, epoch_values):
-    plt.figure(figsize=(8, 6))
-    plt.plot(epoch_values, train_mse_values, label='Train MSE')
-    plt.plot(epoch_values, test_mse_values, label='Test MSE')
-    plt.xlabel('Epoch')
-    plt.ylabel('MSE')
-    plt.title('Train and Test MSE over Epochs')
-    plt.legend()
-    plt.savefig(figname, bbox_inches='tight')
-    plt.close()
+with open("./config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
+TRAIN_BATCH_SIZE = config["train_batch_size"]
+TEST_BATCH_SIZE = config["test_batch_size"]
+LR = config["learning_rate"]
+LOG_INTERVAL = config["log_interval"]
+NUM_EPOCHS = config["num_epochs"]
+LAMBDA_L2 = config["lambda_l2"]
 
 datasets = [['davis', 'kiba'][int(sys.argv[1])]]
 modeling = [cnn][int(sys.argv[2])]
@@ -64,14 +66,6 @@ if len(sys.argv) > 3:
     cuda_name = "cuda:" + str(int(sys.argv[3]))
 print('cuda_name:', cuda_name)
 
-TRAIN_BATCH_SIZE = 512
-TEST_BATCH_SIZE = 512
-LR = 0.0005
-LOG_INTERVAL = 20
-NUM_EPOCHS = 2000
-
-LAMBDA_L2 = 1e-3
-
 print('Learning rate: ', LR)
 print('Epochs: ', NUM_EPOCHS)
 
@@ -79,14 +73,18 @@ for dataset in datasets:
     print('\nrunning on ', model_st + '_' + dataset)
     processed_data_file_train = 'data/processed/' + dataset + '_train.pt'
     processed_data_file_test = 'data/processed/' + dataset + '_test.pt'
+    processed_data_file_val = 'data/processed/' + dataset + '_val.pt'
     if ((not os.path.isfile(processed_data_file_train)) or (not os.path.isfile(processed_data_file_test))):
         print('please run create_data.py to prepare data in pytorch format!')
     else:
         train_data = TestbedDataset(root='data', dataset=dataset + '_train')
         test_data = TestbedDataset(root='data', dataset=dataset + '_test')
+        val_data = TestbedDataset(root='data', dataset=dataset + '_val')
+            
         train_loader = DataLoader(train_data, batch_size=TRAIN_BATCH_SIZE, shuffle=True)
         test_loader = DataLoader(test_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
-
+        val_loader = DataLoader(val_data, batch_size=TEST_BATCH_SIZE, shuffle=False)
+    
         device = torch.device(cuda_name if torch.cuda.is_available() else "cpu")
         model = modeling().to(device)
         loss_fn = nn.MSELoss()
@@ -96,19 +94,19 @@ for dataset in datasets:
         best_epoch = -1
         model_file_name = './model_' + model_st + '_' + dataset + '.model'
         result_file_name = './result_' + model_st + '_' + dataset + '.csv'
-        
-        test_mse_values = []
+            
+        val_mse_values = []
         epoch_values = []
-
+    
         for epoch in range(NUM_EPOCHS):
             train(model, device, train_loader, optimizer, epoch + 1, LAMBDA_L2)
-            G, P = predicting(model, device, test_loader)
+            G, P = predicting(model, device, val_loader)
             ret = [rmse(G, P), mse(G, P), pearson(G, P), spearman(G, P), ci(G, P)]
-
-            test_mse = ret[1]
-            test_mse_values.append(test_mse)
+    
+            val_mse = ret[1]
+            val_mse_values.append(val_mse)
             epoch_values.append(epoch + 1)
-
+    
             if ret[1] < best_mse:
                 torch.save(model.state_dict(), model_file_name)
                 with open(result_file_name, 'w') as f:
@@ -119,3 +117,7 @@ for dataset in datasets:
                 print('rmse improved at epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
             else:
                 print(ret[1], 'No improvement since epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
+        model.load_state_dict(torch.load(model_file_name, map_location=device))
+        G, P = predicting(model, device, test_loader)
+        ret = [rmse(G, P), mse(G, P), pearson(G, P), spearman(G, P), ci(G, P)]
+        print('test rmse, mse, pearson, spearman, ci:', ret[0], ret[1], ret[2], ret[3], ret[4])
