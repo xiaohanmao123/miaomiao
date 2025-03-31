@@ -23,7 +23,14 @@ https://zenodo.org/records/15110569
 ## Training
 You can run
 ```
-python training.py
+python training.py 0 0 0
 ```
+Where the first argument is for the index of the datasets, 0/1 for 'davis' or 'kiba', respectively; the second argument is for the index of the models, 0 for our model; and the third argument is for the index of the cuda, 0/1 for 'cuda:0' or 'cuda:1'.
 You can change the parameters by modifying config.yaml. 
+## Predicting
+You can run
+```
+python predict.py 0 0 0
+```
+Where the first argument is for the index of the datasets, 0/1 for 'davis' or 'kiba', respectively; the second argument is for the index of the models, 0 for our model; and the third argument is for the index of the cuda, 0/1 for 'cuda:0' or 'cuda:1'. After running predict.py, the script will generate either davis_test_pred.csv or kiba_test_pred.csv, which contain the model's predicted values.
 ## If you have any questions, please contact me and I will answer them as soon as possible.
