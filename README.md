@@ -18,10 +18,7 @@ python create_data.py
 ```
 If you don't have time to create your datasets, you can download the datasets we have prepared from the link below and place these files there/ In data/processed/.
 ```
-https://drive.google.com/file/d/18XfiIA_LjPBH9pSj1mJ6OosO2y8E402a/view?usp=drive_link
-```
-```
-https://drive.google.com/file/d/1P0tG0UqLjvbB0yrZfZQhP5rbmioelm-c/view?usp=drive_link
+https://zenodo.org/records/15110569
 ```
 ## Training
 You can run
