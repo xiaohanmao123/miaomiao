@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch_geometric.nn import GATv2Conv, global_max_pool as gmp
 from torch_geometric.nn import GATv2Conv
 import numpy as np
-from models.odconv import ODConv2d
+from odconv import ODConv2d
 import yaml
 
 with open("./config.yaml", "r") as f:
