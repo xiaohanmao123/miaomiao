@@ -4,7 +4,7 @@ import sys, os
 from random import shuffle
 import torch
 import torch.nn as nn
-from models.acnn import *
+from acnn import *
 from utils import *
 import matplotlib.pyplot as plt
 import random
@@ -117,7 +117,3 @@ for dataset in datasets:
                 print('rmse improved at epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
             else:
                 print(ret[1], 'No improvement since epoch ', best_epoch, '; best_mse,best_ci:', best_mse, best_ci, model_st, dataset)
-        model.load_state_dict(torch.load(model_file_name, map_location=device))
-        G, P = predicting(model, device, test_loader)
-        ret = [rmse(G, P), mse(G, P), pearson(G, P), spearman(G, P), ci(G, P)]
-        print('test rmse, mse, pearson, spearman, ci:', ret[0], ret[1], ret[2], ret[3], ret[4])
