@@ -40,7 +40,7 @@ python predict.py 0 0 0
 ```
 Where the first argument is for the index of the datasets, 0/1 for 'davis' or 'kiba', respectively; the second argument is for the index of the models, 0 for our model; and the third argument is for the index of the cuda, 0 for 'cuda:0'. After running predict.py, the script will generate either davis_test_pred.csv or kiba_test_pred.csv, which contain the model's predicted values.
 ## Using Custom Datasets
-We provide a dummy dataset (`data/dummy_test.csv`, `data/dummy_train.csv`, `data/dummy_val.csv`) to demonstrate that MLDTA can be adapted to user-defined drug–target affinity datasets. You can generate the processed PyTorch files by running:
+We provide a dummy dataset: data/dummy_test.csv, data/dummy_train.csv, data/dummy_val.csv to demonstrate that MLDTA can be adapted to user-defined drug–target affinity datasets. You can generate the processed PyTorch files by running:
 ```
 python create_dummy_data.py
 ```
