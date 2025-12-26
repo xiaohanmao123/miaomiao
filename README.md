@@ -17,7 +17,11 @@ conda activate dta
 pip install -r requirements.txt
 ```
 ## Create your datasets
-The files data/davis_test.csv, davis_train.csv, davis_val.csv, kiba_test.csv, kiba_train.csv, and kiba_val.csv are pre-split datasets containing APMs prediction data. You can generate these datasets by running the following code.
+Due to GitHub's file size limitations, we have uploaded the datasets to Hugging Face:  
+```
+ https://huggingface.co/datasets/xiaohan123456/davis_kiba/tree/main
+```
+Please download the files from this link and place them in the `data/` directory before running the preprocessing scripts.The files data/davis_test.csv, davis_train.csv, davis_val.csv, kiba_test.csv, kiba_train.csv, and kiba_val.csv are pre-split datasets containing APMs prediction data. You can generate these datasets by running the following code. 
 ```
 python create_data_train_val.py
 ```
