@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this code or data, please cite the corresponding paper when available."
+authors:
+  - family-names: Mao
+    given-names: Xiaohan
+title: "MLDTA: An Ensemble-Driven Multimodal Model with Dynamic Fusion for Drug–Target Affinity Prediction"
+version: 1.0.0
+date-released: 2025-12-26
